@@ -1,0 +1,16 @@
+services:
+  snake-game:
+    build: .
+    container_name: snake-game-app
+    ports:
+      - '3000:3000'
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    restart: unless-stopped
+    networks:
+      - snake-network
+
+networks:
+  snake-network:
+    driver: bridge

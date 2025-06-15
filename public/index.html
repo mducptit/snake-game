@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="password-managers" content="disabled" />
+    <meta name="format-detection" content="telephone=no" />
+    <title>Snake Game</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="languages.js"></script>
+    <script src="scoreboard.js"></script>
+    <script>
+      // Simple error suppression for password manager errors
+      window.addEventListener(
+        'error',
+        function (e) {
+          const message = e.message || ''
+          const filename = e.filename || ''
+
+          // Only suppress specific password manager errors
+          if (
+            message.includes('ControlLooksLikePasswordCredentialField') ||
+            filename.includes('content_script')
+          ) {
+            e.preventDefault()
+            console.warn('Password manager error suppressed:', message)
+            return true
+          }
+        },
+        true,
+      )
+
+      // Simple input protection
+      document.addEventListener('DOMContentLoaded', function () {
+        const inputs = document.querySelectorAll('input')
+        inputs.forEach((input) => {
+          input.setAttribute('autocomplete', 'off')
+          input.setAttribute('data-lpignore', 'true')
+        })
+      })
+    </script>
+  </head>
+  <body>
+    <div class="game-container">
+      <header class="game-header">
+        <button
+          class="theme-toggle"
+          id="themeToggle"
+          aria-label="Toggle Dark Mode"
+        >
+          <span class="theme-toggle-icon">🌙</span>
+          <span class="theme-toggle-text" data-i18n="darkMode">Dark</span>
+        </button>
+        <h1 data-i18n="title">🐍 Snake Game</h1>
+        <div class="score-board">
+          <div class="score">
+            <span data-i18n="score">Score</span>: <span id="score">0</span>
+          </div>
+          <div class="high-score">
+            <span data-i18n="highScore">High Score</span>:
+            <span id="high-score">0</span>
+          </div>
+          <div class="level">
+            <span data-i18n="level">Level</span>: <span id="level">1</span>
+          </div>
+        </div>
+        <div class="header-buttons">
+          <button
+            id="scoreboardBtn"
+            class="header-btn"
+            data-i18n="scoreboardTitle"
+          >
+            🏆 Scoreboard
+          </button>
+          <button id="settingsBtn" class="header-btn">⚙️</button>
+          <button id="debugBtn" class="header-btn" style="display: none">
+            🐛 Debug
+          </button>
+        </div>
+      </header>
+
+      <div class="game-area">
+        <canvas id="gameCanvas" width="600" height="400"></canvas>
+
+        <div class="game-overlay" id="gameOverlay">
+          <div class="overlay-content" id="overlayContent">
+            <!-- Welcome Screen Content -->
+            <div class="welcome-screen" id="welcomeScreen">
+              <h2 id="overlayTitle" data-i18n="welcomeTitle">
+                Welcome to Snake!
+              </h2>
+              <p id="overlayMessage" data-i18n="welcomeMessage">
+                Use arrow keys or WASD to move
+              </p>
+              <button
+                id="startButton"
+                class="game-button"
+                data-i18n="startGame"
+              >
+                Start Game
+              </button>
+            </div>
+
+            <!-- Single Game Over Modal -->
+            <div
+              class="game-over-modal"
+              id="gameOverModal"
+              style="display: none"
+            >
+              <div
+                id="modalContent"
+                style="
+                  background: white;
+                  color: black;
+                  padding: 30px;
+                  border-radius: 15px;
+                  text-align: center;
+                  max-width: 400px;
+                  width: 90%;
+                "
+              >
+                <!-- Content will be dynamically updated -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="control-section">
+          <h3 data-i18n="controlsTitle">Controls</h3>
+          <div class="control-grid">
+            <div class="control-item">
+              <span class="key">↑ ↓ ← →</span>
+              <span class="description" data-i18n="moveSnake">Move Snake</span>
+            </div>
+            <div class="control-item">
+              <span class="key">WASD</span>
+              <span class="description" data-i18n="alternativeMovement"
+                >Alternative Movement</span
+              >
+            </div>
+            <div class="control-item">
+              <span class="key">Space</span>
+              <span class="description" data-i18n="pauseResume"
+                >Pause/Resume</span
+              >
+            </div>
+            <div class="control-item">
+              <span class="key">R</span>
+              <span class="description" data-i18n="restartGame">Restart</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3 data-i18n="settingsTitle">Settings</h3>
+          <div class="setting-item">
+            <label for="languageSelect" data-i18n="language">Language:</label>
+            <select id="languageSelect">
+              <option value="en">English</option>
+              <option value="es">Español</option>
+              <option value="fr">Français</option>
+              <option value="de">Deutsch</option>
+              <option value="vi">Tiếng Việt</option>
+              <option value="zh">中文</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <label for="speedSlider" data-i18n="speed">Speed:</label>
+            <input
+              type="range"
+              id="speedSlider"
+              min="1"
+              max="10"
+              value="5"
+              autocomplete="off"
+              data-form-type="other"
+            />
+            <span id="speedValue">5</span>
+          </div>
+          <div class="setting-item">
+            <label for="gridSize" data-i18n="gridSize">Grid Size:</label>
+            <select id="gridSize">
+              <option value="20" data-i18n="small">Small (20px)</option>
+              <option value="25" selected data-i18n="medium">
+                Medium (25px)
+              </option>
+              <option value="30" data-i18n="large">Large (30px)</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <label for="soundToggle" data-i18n="sound">Sound:</label>
+            <input
+              type="checkbox"
+              id="soundToggle"
+              checked
+              autocomplete="off"
+              data-form-type="other"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="mobile-controls" id="mobileControls">
+        <div class="mobile-game-info">
+          <div class="mobile-score">
+            <span data-i18n="score">Score</span>:
+            <span id="mobileScore">0</span>
+          </div>
+          <div class="mobile-level">
+            <span data-i18n="level">Level</span>:
+            <span id="mobileLevel">1</span>
+          </div>
+        </div>
+
+        <div class="mobile-controls-container">
+          <div class="dpad">
+            <button
+              class="dpad-btn dpad-up"
+              data-direction="up"
+              aria-label="Move Up"
+            >
+              <span class="dpad-icon">↑</span>
+            </button>
+            <div class="dpad-middle">
+              <button
+                class="dpad-btn dpad-left"
+                data-direction="left"
+                aria-label="Move Left"
+              >
+                <span class="dpad-icon">←</span>
+              </button>
+              <div class="dpad-center"></div>
+              <button
+                class="dpad-btn dpad-right"
+                data-direction="right"
+                aria-label="Move Right"
+              >
+                <span class="dpad-icon">→</span>
+              </button>
+            </div>
+            <button
+              class="dpad-btn dpad-down"
+              data-direction="down"
+              aria-label="Move Down"
+            >
+              <span class="dpad-icon">↓</span>
+            </button>
+          </div>
+
+          <div class="mobile-actions">
+            <button
+              id="pauseButton"
+              class="action-btn"
+              data-i18n-title="pauseResume"
+              aria-label="Pause/Resume"
+            >
+              <span class="action-icon">⏸️</span>
+              <span class="action-text" data-i18n="pause">Pause</span>
+            </button>
+            <button
+              id="mobileRestartButton"
+              class="action-btn"
+              data-i18n-title="restartGame"
+              aria-label="Restart Game"
+            >
+              <span class="action-icon">🔄</span>
+              <span class="action-text" data-i18n="restart">Restart</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="mobile-settings-toggle">
+          <button
+            id="mobileSettingsBtn"
+            class="settings-toggle-btn"
+            aria-label="Toggle Settings"
+          >
+            <span class="settings-icon">⚙️</span>
+            <span class="settings-text" data-i18n="settingsTitle"
+              >Settings</span
+            >
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="game.js"></script>
+  </body>
+</html>
