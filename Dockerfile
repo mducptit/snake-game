@@ -1,5 +1,5 @@
 # Use official Node.js runtime as base image
-FROM node:18-alpine
+FROM node:22-alpine
 
 # Set working directory in container
 WORKDIR /app
@@ -28,10 +28,6 @@ ENV NODE_ENV=production
 
 # Expose port (will be dynamic based on PORT env var)
 EXPOSE $PORT
-
-# Health check with dynamic port
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 3000), (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
 
 # Start the application
 CMD ["node", "server.js"]
