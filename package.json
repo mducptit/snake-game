@@ -14,7 +14,7 @@
     "web",
     "multiplayer"
   ],
-  "author": "mducptit",
+  "author": "Snake Game Developer",
   "license": "MIT",
   "dependencies": {
     "dotenv": "^16.5.0",

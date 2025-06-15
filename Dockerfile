@@ -1,8 +1,5 @@
 # Use official Node.js runtime as base image
-FROM node:22-alpine
-
-# Update Alpine packages to reduce vulnerabilities
-RUN apk update && apk upgrade
+FROM node:18-alpine
 
 # Set working directory in container
 WORKDIR /app
@@ -25,8 +22,16 @@ RUN addgroup -g 1001 -S nodejs && \
 RUN chown -R nextjs:nodejs /app
 USER nextjs
 
-# Expose port
-EXPOSE 3000
+# Set default port (can be overridden by environment variable)
+ENV PORT=3000
+ENV NODE_ENV=production
+
+# Expose port (will be dynamic based on PORT env var)
+EXPOSE $PORT
+
+# Health check with dynamic port
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 3000), (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
 
 # Start the application
 CMD ["node", "server.js"]

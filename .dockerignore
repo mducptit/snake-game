@@ -10,3 +10,6 @@ docker-compose.yml
 dist/
 src/
 tsconfig.json
+.env
+CHANGELOG.md
+DEPLOYMENT.md

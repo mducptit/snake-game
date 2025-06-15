@@ -1,12 +1,14 @@
 services:
   snake-game:
     build: .
-    container_name: snake-game-app
+    container_name: ${CONTAINER_NAME:-snake-game-app}
     ports:
-      - '3000:3000'
+      - '${PORT:-3000}:${PORT:-3000}'
     environment:
-      - NODE_ENV=production
-      - PORT=3000
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=${PORT:-3000}
+    env_file:
+      - .env
     restart: unless-stopped
     networks:
       - snake-network
